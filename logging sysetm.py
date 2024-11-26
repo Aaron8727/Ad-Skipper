@@ -10,6 +10,10 @@ deadzone_x2, deadzone_y2 = 1850, 1080  # Bottom-right corner of the deadzone
 #define 2nd deadzone
 deadzone_x3, deadzone_y3 =0,100
 deadzone_x4, deadzone_y4 = 1920,1080
+
+whitezone_x1, whitezone_y1 = 1508, 400  # Top-left corner of the whitezone (adjust as needed)
+whitezone_x2, whitezone_y2 = 1885, 550  # Bottom-right corner of the whitezone (adjust as needed)
+
 # Function to detect the template (e.g., arrow or X button) on the right side of the screen
 def detect_template(template_paths, threshold=0.85, check_deadzone=True):
     # Capture a screenshot
@@ -80,8 +84,8 @@ def Press_likely_x_pos():
     click_position(likely_x_pos)
     time.sleep(1)
     click_position(likely_otherx_pos)
-    time.sleep(1)
-    click_position(likely_otherx1_pos)
+    #time.sleep(1)
+    #click_position(likely_otherx1_pos)
 
 # Function to press the home and reset buttons using predetermined positions
 def press_home_and_reset_predetermined():
@@ -98,7 +102,20 @@ def press_home_and_reset_predetermined():
     click_position(reset_button_position)
     time.sleep(1)
 
-#new clause to fix exit
+def Reset_System():
+
+    open_tabs_button_position = (1904, 683)
+    close_tabs_button_position = (1831,68)
+    reset_button_position = (1811, 162)
+
+    click_position(open_tabs_button_position)
+    time.sleep(1)
+
+    click_position(close_tabs_button_position)
+    time.sleep(1)
+
+    click_position(reset_button_position)
+    time.sleep(1)
 
 def press_lime_open_ads():
 
@@ -155,6 +172,7 @@ arrow_button_templates = [
 
 play_next_ad_template = [
     'images/button.JPG',
+    'images/button3.JPG'
 ]  # Paths to the play next ad button templates
 
 stupid_surveypage_template = [
@@ -167,10 +185,11 @@ Lime_homescreen_template = [
 
 # Start time tracking for detecting "play next ad" button
 start_time = time.time()
-
+start_total_time = time.time()
 while True:
     # Print current time for debugging purposes
     elapsed_time = time.time() - start_time
+    elapsed_total_time = time.time() - start_total_time
     print(f"\nElapsed time: {elapsed_time:.2f} seconds")
 
     # Check if 30 seconds have passed without detecting the "next ad" button
@@ -178,9 +197,16 @@ while True:
         print("40 seconds passed without detecting the play next ad button, pressing home and reset buttons...")
         press_home_and_reset_predetermined()  # Use the predetermined positions
         start_time = time.time()  # Reset the timer after pressing the buttons
-    if elapsed_time >= 35:
+    if elapsed_time >= 32:
         print("35 seconds passed trying likely x pos")
         Press_likely_x_pos()
+
+    if elapsed_total_time >= 1500:
+        print("system reset")
+        Reset_System()
+        start_total_time = time.time()
+    #print(elapsed_total_time,"total seconds elapsed")
+
     homescreen_pos = detect_template(Lime_homescreen_template, check_deadzone=False)
 
     if homescreen_pos:
@@ -193,9 +219,13 @@ while True:
 
     # If a "next ad" button is detected, click it and reset the timer
     if nextad_button_pos:
-        print("Next ad button detected, clicking the button...")
-        click_position(nextad_button_pos)
-        start_time = time.time()
+        detected_x, detected_y = nextad_button_pos
+        if whitezone_x1 <= detected_x <= whitezone_x2 and whitezone_y1 <= detected_y <= whitezone_y2:
+            print("Next ad button detected within whitezone, clicking the button...")
+            click_position(nextad_button_pos)
+            start_time = time.time()
+        else:
+            print("Next ad button detected but outside whitezone, skipping click.")
 
     # Try to detect any of the arrow button variants first
     arrow_pos = detect_template(arrow_button_templates, check_deadzone=True)
